@@ -933,6 +933,17 @@ case "$UBOOT_TYPE" in
  is_omap
 
         ;;
+    e100)
+
+ SYSTEM=e100
+ unset IN_VALID_UBOOT
+ DO_UBOOT=1
+ ABI_VER=11
+ SERIAL="ttyO2"
+ is_omap
+ VIDEO_TIMING="1280x1024MR-16@60"
+
+        ;;
 esac
 
  if [ "$IN_VALID_UBOOT" ] ; then
@@ -1016,6 +1027,7 @@ Required Options:
     bone - <BeagleBone Ax>
     igepv2 - <serial mode only>
     panda - <PandaBoard Ax>
+    e100 - <USRP-E100 (Gumstix Overo based)>
 
 --addon <device>
     pico
