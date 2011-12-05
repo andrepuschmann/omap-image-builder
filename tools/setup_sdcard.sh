@@ -43,6 +43,7 @@ unset DD_UBOOT
 unset SECONDARY_KERNEL
 unset USE_UENV
 unset DISABLE_ETH
+AUTO_BOOT=1
 
 unset SVIDEO_NTSC
 unset SVIDEO_PAL
@@ -191,6 +192,18 @@ setenv bootcmd 'fatload mmc 0:1 UIMAGE_ADDR uImage; fatload mmc 0:1 UINITRD_ADDR
 setenv bootargs console=\${console} \${optargs} root=\${mmcroot} rootfstype=\${mmcrootfstype} VIDEO_RAM omapfb.mode=\${defaultdisplay}:\${dvimode} omapdss.def_disp=\${defaultdisplay}
 setenv ipaddr IPADDR
 setenv serverip SERVERIP
+setenv loadtftpkernel tftp \${loadaddr} uImage
+setenv netboot run loadtftpkernel\; bootm \${loadaddr}
+boot_cmd
+
+}
+
+# this is only needed for boot.cmd based environments
+# because after calling source ${loadaddr} there is no
+# way to interrupt booting anymore
+function boot_files_template_auto_boot {
+
+cat >> ${TEMPDIR}/bootscripts/boot.cmd <<boot_cmd
 boot
 boot_cmd
 
@@ -353,6 +366,9 @@ function setup_bootscripts {
   tweak_boot_scripts
  else
   boot_files_template
+  if [ "$AUTO_BOOT" ];then
+   boot_files_template_auto_boot
+  fi  
   boot_scr_to_uenv_txt
   tweak_boot_scripts
  fi
@@ -1065,6 +1081,9 @@ Required Options:
 --svideo-pal
     force pal mode for svideo
 
+--no-auto-boot
+    define if you want to prevent uboot from auto booting
+
 Additional Options:
 -h --help
     this help
@@ -1159,6 +1178,9 @@ while [ ! -z "$1" ]; do
             ;;
         --secondary-kernel)
             SECONDARY_KERNEL=1
+            ;;
+        --no-auto-boot)
+            unset AUTO_BOOT
             ;;
         --debug)
             DEBUG=1
