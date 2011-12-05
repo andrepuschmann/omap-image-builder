@@ -47,8 +47,11 @@ AUTO_BOOT=1
 
 unset SVIDEO_NTSC
 unset SVIDEO_PAL
+unset LOCAL_BL_LIST
 
 MIRROR="http://rcn-ee.net/deb/"
+
+LOCAL_BL_INFO="bootloader.info"
 
 #Defaults
 RFS=ext4
@@ -178,6 +181,54 @@ function dl_bootloader {
  echo "UBOOT Bootloader: ${UBOOT}"
 }
 
+#this is useful for building images without downloading images
+#the bootloader.info file should have the same structure like 
+#the online version (i.e. http://rcn-ee.net/deb/tools/latest/bootloader)
+function local_bootloader {
+ echo ""
+ echo "Using local bootloader files"
+ echo "-----------------------------"
+
+ mkdir -p ${TEMPDIR}/dl/${DIST}
+ mkdir -p ${DIR}/dl/${DIST}
+
+ if [ ! -f $LOCAL_BL_INFO ] 
+ then
+     echo "$LOCAL_BL_INFO does not exist. " 
+     exit 1
+ fi
+
+ if [ "$USE_BETA_BOOTLOADER" ];then
+  ABI="ABX"
+ else
+  ABI="ABI"
+ fi
+
+ if [ "${SPL_BOOT}" ] ; then
+  MLO=$(cat ${DIR}/${LOCAL_BL_INFO} | grep "${ABI}:${ABI_VER}:MLO" | awk '{print $2}')
+  echo "test: ${MLO}"
+  if [ ! -f ${MLO} ] 
+  then
+   echo "${MLO} does not exist. " 
+   exit 1
+  fi
+  cp ${MLO} ${TEMPDIR}/dl/
+  MLO=${MLO##*/}
+  echo "SPL Bootloader: ${MLO}"
+ fi
+
+ UBOOT=$(cat ${DIR}/${LOCAL_BL_INFO} | grep "${ABI}:${ABI_VER}:UBOOT" | awk '{print $2}')
+ echo "test: ${UBOOT}"
+ if [ ! -f ${UBOOT} ] 
+ then
+  echo "${UBOOT} does not exist. " 
+  exit 1
+ fi 
+ cp ${MLO} ${TEMPDIR}/dl/
+ UBOOT=${UBOOT##*/}
+ echo "UBOOT Bootloader: ${UBOOT}"
+}
+
 function boot_files_template {
 
 cat > ${TEMPDIR}/bootscripts/boot.cmd <<boot_cmd
@@ -198,7 +249,8 @@ boot_cmd
 
 }
 
-# this is only needed for boot.cmd based environments
+# this is only needed for boot.cmd based environments for
+# debugging (e.g. booting kernels via tftp)
 # because after calling source ${loadaddr} there is no
 # way to interrupt booting anymore
 function boot_files_template_auto_boot {
@@ -319,7 +371,7 @@ function tweak_boot_scripts {
  
  #Set own IP address and server IP
  sed -i -e 's:IPADDR:'$IPADDR':g' ${TEMPDIR}/bootscripts/*.cmd
- sed -i -e 's:SERVERIP:'$SERVERIP':g' ${TEMPDIR}/bootscripts/*.cmd 
+ sed -i -e 's:SERVERIP:'$SERVERIP':g' ${TEMPDIR}/bootscripts/*.cmd
 
 if [ "$SERIAL_MODE" ];then
  #console=CONSOLE
@@ -368,7 +420,7 @@ function setup_bootscripts {
   boot_files_template
   if [ "$AUTO_BOOT" ];then
    boot_files_template_auto_boot
-  fi  
+  fi
   boot_scr_to_uenv_txt
   tweak_boot_scripts
  fi
@@ -1081,6 +1133,9 @@ Required Options:
 --svideo-pal
     force pal mode for svideo
 
+--local-bootloader-list
+    use local boot loader list instead of downloading one
+
 --no-auto-boot
     define if you want to prevent uboot from auto booting
 
@@ -1157,6 +1212,9 @@ while [ ! -z "$1" ]; do
         --svideo-pal)
             SVIDEO_PAL=1
             ;;
+        --local-bootloader-list)
+            LOCAL_BL_LIST=1
+            ;;
         --boot_label)
             checkparm $2
             BOOT_LABEL="$2"
@@ -1204,13 +1262,17 @@ fi
 
  find_issue
  detect_software
+if [ "$LOCAL_BL_LIST" ];then
+ local_bootloader
+else
  dl_bootloader
+fi
 
 if [ "$DO_UBOOT" ];then
  setup_bootscripts
 fi
  unmount_all_drive_partitions
- create_partitions
+ create_partitions 
  populate_boot
  populate_rootfs
 
