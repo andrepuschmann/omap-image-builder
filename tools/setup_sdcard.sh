@@ -54,6 +54,9 @@ RFS=ext4
 BOOT_LABEL=boot
 RFS_LABEL=rootfs
 PARTITION_PREFIX=""
+#for network boot
+IPADDR="192.168.5.111"
+SERVERIP="192.168.5.104"
 
 DIR=$PWD
 TEMPDIR=$(mktemp -d)
@@ -186,6 +189,8 @@ setenv mmcroot /dev/mmcblk0p2 ro
 setenv mmcrootfstype FINAL_FSTYPE rootwait fixrtc
 setenv bootcmd 'fatload mmc 0:1 UIMAGE_ADDR uImage; fatload mmc 0:1 UINITRD_ADDR uInitrd; bootm UIMAGE_ADDR UINITRD_ADDR'
 setenv bootargs console=\${console} \${optargs} root=\${mmcroot} rootfstype=\${mmcrootfstype} VIDEO_RAM omapfb.mode=\${defaultdisplay}:\${dvimode} omapdss.def_disp=\${defaultdisplay}
+setenv ipaddr IPADDR
+setenv serverip SERVERIP
 boot
 boot_cmd
 
@@ -298,6 +303,10 @@ function tweak_boot_scripts {
 
  #Set filesystem type
  sed -i -e 's:FINAL_FSTYPE:'$RFS':g' ${TEMPDIR}/bootscripts/*.cmd
+ 
+ #Set own IP address and server IP
+ sed -i -e 's:IPADDR:'$IPADDR':g' ${TEMPDIR}/bootscripts/*.cmd
+ sed -i -e 's:SERVERIP:'$SERVERIP':g' ${TEMPDIR}/bootscripts/*.cmd 
 
 if [ "$SERIAL_MODE" ];then
  #console=CONSOLE
