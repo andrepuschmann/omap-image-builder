@@ -535,7 +535,9 @@ else
 fi
 
  calculate_rootfs_partition
+ umount ${MMC}${PARTITION_PREFIX}1
  format_boot_partition
+ umount ${MMC}${PARTITION_PREFIX}2
  format_rootfs_partition
 }
 
