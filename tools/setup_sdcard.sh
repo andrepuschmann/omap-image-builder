@@ -206,7 +206,6 @@ function local_bootloader {
 
  if [ "${SPL_BOOT}" ] ; then
   MLO=$(cat ${DIR}/${LOCAL_BL_INFO} | grep "${ABI}:${ABI_VER}:MLO" | awk '{print $2}')
-  echo "test: ${MLO}"
   if [ ! -f ${MLO} ] 
   then
    echo "${MLO} does not exist. " 
@@ -218,13 +217,12 @@ function local_bootloader {
  fi
 
  UBOOT=$(cat ${DIR}/${LOCAL_BL_INFO} | grep "${ABI}:${ABI_VER}:UBOOT" | awk '{print $2}')
- echo "test: ${UBOOT}"
  if [ ! -f ${UBOOT} ] 
  then
   echo "${UBOOT} does not exist. " 
   exit 1
  fi 
- cp ${MLO} ${TEMPDIR}/dl/
+ cp ${UBOOT} ${TEMPDIR}/dl/
  UBOOT=${UBOOT##*/}
  echo "UBOOT Bootloader: ${UBOOT}"
 }
@@ -535,9 +533,16 @@ else
 fi
 
  calculate_rootfs_partition
- umount ${MMC}${PARTITION_PREFIX}1
+ #unmount partitions if mounted
+ grep -qs ${MMC}${PARTITION_PREFIX}1 /proc/mounts || true
+ if [ $? -eq 1 ] ; then
+  umount ${MMC}${PARTITION_PREFIX}1
+ fi
  format_boot_partition
- umount ${MMC}${PARTITION_PREFIX}2
+ grep -qs ${MMC}${PARTITION_PREFIX}2 /proc/mounts || true
+ if [ $? -eq 1 ] ; then
+  umount ${MMC}${PARTITION_PREFIX}2
+ fi
  format_rootfs_partition
 }
 
