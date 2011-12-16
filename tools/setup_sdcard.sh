@@ -54,7 +54,7 @@ MIRROR="http://rcn-ee.net/deb/"
 LOCAL_BL_INFO="bootloader.info"
 
 #Defaults
-RFS=ext4
+RFS=ext3
 BOOT_LABEL=boot
 RFS_LABEL=rootfs
 PARTITION_PREFIX=""
@@ -237,7 +237,7 @@ setenv console SERIAL_CONSOLE
 setenv optargs VIDEO_CONSOLE
 setenv mmcroot /dev/mmcblk0p2 ro
 setenv mmcrootfstype FINAL_FSTYPE rootwait fixrtc
-setenv bootcmd 'fatload mmc 0:1 UIMAGE_ADDR uImage; fatload mmc 0:1 UINITRD_ADDR uInitrd; bootm UIMAGE_ADDR UINITRD_ADDR'
+setenv bootcmd 'fatload mmc 0:1 UIMAGE_ADDR uImage; bootm UIMAGE_ADDR'
 setenv bootargs console=\${console} \${optargs} root=\${mmcroot} rootfstype=\${mmcrootfstype} VIDEO_RAM omapfb.mode=\${defaultdisplay}:\${dvimode} omapdss.def_disp=\${defaultdisplay}
 setenv ipaddr IPADDR
 setenv serverip SERVERIP
@@ -534,12 +534,13 @@ fi
 
  calculate_rootfs_partition
  #unmount partitions if mounted
- grep -qs ${MMC}${PARTITION_PREFIX}1 /proc/mounts || true
+ sleep 1
+ grep -qs ${MMC}${PARTITION_PREFIX}1 /proc/mounts && false || true
  if [ $? -eq 1 ] ; then
   umount ${MMC}${PARTITION_PREFIX}1
  fi
  format_boot_partition
- grep -qs ${MMC}${PARTITION_PREFIX}2 /proc/mounts || true
+ grep -qs '${MMC}${PARTITION_PREFIX}2' /proc/mounts && false || true
  if [ $? -eq 1 ] ; then
   umount ${MMC}${PARTITION_PREFIX}2
  fi
